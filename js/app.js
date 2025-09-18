@@ -1,52 +1,122 @@
-// INSTRUCCIONES PARA EL ALUMNO:
+const balance = document.getElementById('balance');
+const btnIngresar = document.getElementById('btnIngresar');
+const modalIngresar = document.getElementById('modalIngresar');
+const btnTransferir = document.getElementById('btnTransferir');
+const modalTransferir = document.getElementById('modalTransferir');
+const btnHistorial = document.getElementById('btnHistorial');
+const transactionList = document.getElementById('transactionList');
+const confirmarIngreso = document.getElementById('confirmarIngreso');
+const montoIngreso = document.getElementById('montoIngreso');
+const confirmarTransferencia = document.getElementById('confirmarTransferencia');
+const montoTransferencia = document.getElementById('montoTransferencia');
+const destinatario = document.getElementById('destinatario');
 
-// 1. Implementar el manejo del DOM
-// - Obtener referencias a los elementos del DOM necesarios (botones, inputs, etc.)
-// - Implementar los event listeners necesarios
+/* const botonesCancelar = document.querySelectorAll('.cerrar-modal');
+botonesCancelar.forEach(boton => {
+    boton.addEventListener('click', () => {
+        modalIngresar.style.display = 'none';
+        modalTransferir.style.display = 'none';
+    });
+}); */
 
-// 2. Implementar el manejo del localStorage
-// - Crear función para guardar el saldo
-// - Crear función para obtener el saldo
-// - Crear función para guardar el historial de transacciones
-// - Crear función para obtener el historial de transacciones
-
-// 3. Implementar la lógica de la billetera
-// - Crear función para actualizar el saldo mostrado
-// - Crear función para ingresar dinero
-// - Crear función para realizar transferencias
-// - Crear función para mostrar el historial de transacciones
-
-// 4. Implementar el manejo de modales
-// - Crear funciones para abrir y cerrar modales
-// - Implementar la lógica de los formularios
-
-// 5. Implementar la validación de datos
-// - Validar que los montos sean positivos
-// - Validar que haya saldo suficiente para transferir
-// - Validar que los campos requeridos estén completos
-
-// 6. Implementar fetch para simular una API
-// - Crear función para obtener tipos de cambio de conversion.json
-// - Implementar función convertAmount() para convertir entre monedas
-// - Manejar errores de carga de datos
-
-// Estructura sugerida de datos para una transacción:
-/*
-{
-    id: "uuid-generado",
-    tipo: "ingreso" | "transferencia",
-    monto: 1000,
-    fecha: "2024-01-20T10:00:00",
-    destinatario: "Juan Pérez", // solo para transferencias
-    estado: "completada"
+const openModal = (modal) => {
+    modal.style.display = 'block';
+    modal.querySelector('.cerrar-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
 }
-*/
 
-// Código inicial para comenzar:
-document.addEventListener('DOMContentLoaded', () => {
-    // Aquí debes inicializar tu aplicación
-    // 1. Obtener referencias del DOM
-    // 2. Cargar datos del localStorage
-    // 3. Configurar event listeners
-    // 4. Actualizar UI inicial
+btnIngresar.addEventListener('click', () => {
+    openModal(modalIngresar);
+})
+
+btnTransferir.addEventListener('click', () => {
+    openModal(modalTransferir);
+})
+
+btnHistorial.addEventListener('click', () => {
+    if (transactionList.style.display === 'none') {
+        transactionList.style.display = 'block';
+    } else {
+        transactionList.style.display = 'none';
+    }
+})
+
+/* Agregar transacciones al historial */
+const agregarTransaccion = (transaccion) => {
+    const transacciones = JSON.parse(localStorage.getItem('transacciones') || '[]');
+    transacciones.push(transaccion);
+    localStorage.setItem('transacciones', JSON.stringify(transacciones));
+    mostrarTransacciones()
+}
+
+/* Logica del ingreso de dinero */
+const validarMonto = (monto) => !(isNaN(monto) || monto <= 0)
+
+confirmarIngreso.addEventListener('click', () => {
+    const monto = parseFloat(montoIngreso.value);
+    console.log(monto)
+    if (validarMonto(monto)) {
+        const saldo = parseFloat(localStorage.getItem('saldo') || 0);
+        localStorage.setItem('saldo', saldo + monto);
+        balance.innerText = `$ ${(saldo + monto).toFixed(2)}`;
+        montoIngreso.value = '';
+        modalIngresar.style.display = 'none';
+        // Historial
+        agregarTransaccion({
+            monto,
+            tipo: 'ingreso',
+            destinatario: 'Billetera Virtual'
+        })
+    } else {
+        alert('Ingrese un monto valido');
+        return;
+    }
+})
+
+/* Logica del transferencia de dinero */
+const validarSaldo = (monto) => {
+    const saldo = parseFloat(localStorage.getItem('saldo') || 0);
+    return monto <= saldo;
+}
+
+confirmarTransferencia.addEventListener('click', () => {
+    const monto = parseFloat(montoTransferencia.value);
+    const destination = destinatario.value;
+    if (validarMonto(monto) && validarSaldo(monto) && destination.length > 2) {
+        const saldo = parseFloat(localStorage.getItem('saldo') || 0)
+        localStorage.setItem('saldo', saldo - monto);
+        balance.innerText = `$ ${(saldo - monto).toFixed(2)}`;
+        montoTransferencia.value = '';
+        destinatario.value = '';
+        modalTransferir.style.display = 'none';
+        // Historial
+        agregarTransaccion({
+            monto,
+            tipo: 'transferencia',
+            destinatario: destination
+        })
+
+    } else {
+        alert('Ingrese un monto valido');
+        return;
+    }
+})
+
+/* Mostrar historial de transacciones */
+const mostrarTransacciones = () => {
+    const transacciones = JSON.parse(localStorage.getItem('transacciones') || '[]');
+    transacciones.forEach(transaccion => {
+        transactionList.innerHTML += `
+                <div class="transaction-item">
+                    <p>${transaccion.tipo === 'ingreso' ? '+' : '-'} ${transaccion.monto.toFixed(2)} destino: ${transaccion.destinatario}</p>
+                </div>
+            `;
+    });
+}
+
+window.addEventListener('load', () => {
+    const saldo = parseFloat(localStorage.getItem('saldo') || 0);
+    balance.innerText = `$ ${saldo.toFixed(2)}`;
+    mostrarTransacciones()
 });
